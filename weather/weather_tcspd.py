@@ -1,15 +1,17 @@
 import os
 import datetime
 import threading
+import weather.weather2db as SaveWeather
 
 class GetWeather(threading.Thread):
-    def __init__(self, station_file, destination_file):
+    def __init__(self, station_file, destination_file, db_name, user, password, host, port):
         super().__init__()
         self._stop_event = threading.Event()
         self.station_file = station_file
         self.destination_file = destination_file
         self.stat_msg = None
         self.flag = True
+        self.save2db = SaveWeather.WeatherToDB(station_file, db_name, user, password, host, port)
     
     def update_files(self, source, destination):
         self.station_file = source
@@ -30,6 +32,12 @@ class GetWeather(threading.Thread):
 
             with open(destination_file, 'w') as file:
                 file.write(last_line)
+                print(last_line)
+                if self.save2db:
+                    print("save2db exists")
+                    self.stat_msg = self.save2db.save_to_db()
+                else:
+                    print(self.save2db)
             
             current_time = datetime.datetime.now()
             formatted_time = current_time.strftime("%H:%M")
@@ -47,7 +55,7 @@ class GetWeather(threading.Thread):
 
                 if os.path.exists(parent_dir) and os.path.exists(self.station_file):          
                     self.save_last_line(self.station_file, self.destination_file)
-                    self.stat_msg = f"{formatted_time} Arquivo Clima atualizado."
+                    self.stat_msg += f"\n{formatted_time} Arquivo Clima atualizado."
                 else:
                     self.stat_msg = f"Arquivos ou pastas inexistentes."
                 

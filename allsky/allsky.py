@@ -5,6 +5,7 @@ import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import allsky.constellations.skymap as SkyMap
+import datetime
 
 class AllskyWork(threading.Thread):
     def __init__(self, directory_to_watch, destination_directory, skymap, offline_file):
@@ -92,7 +93,9 @@ class FileHandler(FileSystemEventHandler):
                     new_file_name = "allsky_picole.jpg"  # Rename the file if desired
                     new_file_path = os.path.join(self.destination_directory, new_file_name)
                     shutil.copyfile(file_path, new_file_path)
-                    self.stat_msg = f"Imagem Allsky movida."
+                    current_time = datetime.datetime.now()
+                    formatted_time = current_time.strftime("%H:%M")
+                    self.stat_msg = f"{formatted_time} Imagem Allsky movida."
                     if self.skymap:
                         self.generate_skymap(new_file_path)
             except Exception as e:

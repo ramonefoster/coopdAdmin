@@ -69,6 +69,10 @@ class MyApp(QMainWindow, Ui_MainWindow):
         """FILE TCSPD WEATHER"""
         self.setting_variables.setValue("dest_weather_tcspd", self.dest_weather_tcspd.text())
         self.setting_variables.setValue("source_weather_tcspd", self.source_weather_tcspd.text())
+        self.setting_variables.setValue("db_user_2", self.db_user_2.text())
+        self.setting_variables.setValue("db_password_2", self.db_password_2.text())
+        self.setting_variables.setValue("db_host_2", self.db_host_2.text())
+        self.setting_variables.setValue("db_name_2", self.db_name_2.text())
         """ALLSKY 1"""
         self.setting_variables.setValue("ftp_allsky_1", self.ftp_allsky_1.text())
         self.setting_variables.setValue("dir_allsky_1", self.dir_allsky_1.text())
@@ -97,6 +101,10 @@ class MyApp(QMainWindow, Ui_MainWindow):
         """FILE TCSPD WEATHER"""
         self.dest_weather_tcspd.setText(self.setting_variables.value("dest_weather_tcspd"))
         self.source_weather_tcspd.setText(self.setting_variables.value("source_weather_tcspd"))
+        self.db_user_2.setText(self.setting_variables.value("db_user_2"))
+        self.db_password_2.setText(self.setting_variables.value("db_password_2"))        
+        self.db_host_2.setText(self.setting_variables.value("db_host_2"))
+        self.db_name_2.setText(self.setting_variables.value("db_name_2"))
         """ALLSKY 1"""
         self.ftp_allsky_1.setText(self.setting_variables.value("ftp_allsky_1"))
         self.dir_allsky_1.setText(self.setting_variables.value("dir_allsky_1"))
@@ -147,21 +155,27 @@ class MyApp(QMainWindow, Ui_MainWindow):
     
     def update_image(self):
         path = self.dir_allsky_1.text()+r'\allsky_picole.jpg'
-        if self.is_image_modified(path):
-            pixmap = QPixmap(path)
-            self.img_allsky_1.setPixmap(pixmap)
-        else:
-            if os.path.exists(self.img_off_1.text()):
-                pixmap = QPixmap(self.img_off_1.text())
+        if self.allsky_handler:
+            if self.is_image_modified(path):
+                pixmap = QPixmap(path)
                 self.img_allsky_1.setPixmap(pixmap)
+            if not self.allsky_handler.check_online(self.ftp_allsky_1.text()):
+                if os.path.exists(self.img_off_1.text()):
+                    pixmap = QPixmap(self.img_off_1.text())
+                    self.img_allsky_1.setPixmap(pixmap)
     
     def start_weather_tcspd(self):
         source_file = self.source_weather_tcspd.text()
         dest_file = self.dest_weather_tcspd.text()
-        self.weather_handle = ClimaTCSPD.GetWeather(source_file, dest_file)
+        host = self.db_host_2.text()
+        user = self.db_user_2.text()
+        password = self.db_password_2.text()
+        db_name = self.db_name_2.text()
+        port = '5432'
+        self.weather_handle = ClimaTCSPD.GetWeather(source_file, dest_file, db_name, user, password, host, port)
         self.weather_handle.start()
     
-    def update_weather_tcspd(self):
+    def update_weather_tcspd(self):        
         # ADD BOTAO UI
         source_file = self.source_weather_tcspd.text()
         dest_file = self.dest_weather_tcspd.text()
@@ -181,9 +195,9 @@ class MyApp(QMainWindow, Ui_MainWindow):
         user = self.db_user.text()
         password = self.db_password.text()
         db_name = self.db_name.text()
-        dir = self.db_bkp_folder.text()
+        dir_name = self.db_bkp_folder.text()
         
-        self.backuper = DBbackuper.BackupDB(hour, host, user, password, db_name, dir) 
+        self.backuper = DBbackuper.BackupDB(hour, host, user, password, db_name, dir_name) 
         self.backuper.start() 
 
     def update_backuper(self):
@@ -269,7 +283,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.main_status()         
         if self.weather_handle:
             weather_msg = self.weather_handle.stat_msg 
-            self.txt_msg_extras.setText(weather_msg)  
+            self.txt_msg_extras_2.setText(weather_msg)  
         if self.backuper:            
             backuper_msg = self.backuper.stat_msg  
             self.txt_msg_extras.setText(backuper_msg)

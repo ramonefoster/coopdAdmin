@@ -39,14 +39,14 @@ class BackupDB(threading.Thread):
     def do_work(self):
         self.progress = 0
         DATETIME = time.strftime('%Y%m%d-%H%M%S')
-        TODAYBACKUPPATH = self.BACKUP_DIR + '/' + DATETIME
+        TODAYBACKUPPATH = 'backup/files' + '/' + DATETIME
         
         # Checking if backup folder already exists or not. If not exists will create it.
         try:
             os.stat(TODAYBACKUPPATH)
         except:
             os.mkdir(TODAYBACKUPPATH)
-        
+                
         self.progress = 10
         
         # Code for checking if you want to take single database backup or assinged multiple backups in self.DB_NAME.
@@ -90,9 +90,9 @@ class BackupDB(threading.Thread):
         try:
             self.stat_msg = "Backup script completed"
             file_path = TODAYBACKUPPATH + '/observacoes.sql'
-            self.zip_files(file_path, (self.BACKUP_DIR+"/db_backup.zip"))
+            self.zip_files(file_path, (TODAYBACKUPPATH+"/db_backup.zip"))
             self.progress = 80
-            uploader.upload_basic('db_backup.zip')
+            uploader.upload_basic(TODAYBACKUPPATH+'/db_backup.zip')
         except Exception as e:
             self.stat_msg = "Erro no upload: " + str(e)
         self.progress = 100
