@@ -125,16 +125,20 @@ class MyApp(QMainWindow, Ui_MainWindow):
     def start_allsky_handler(self):
         directory_to_watch = self.ftp_allsky_1.text()
         destination_directory = self.dir_allsky_1.text()
+        directory_to_watch_2 = self.ftp_allsky_2.text()
+        destination_directory_2 = self.dir_allsky_2.text()
         skymap = self.check_skymap.isChecked()
-        offline = self.img_off_1.text()        
-        self.allsky_handler = AllSky.AllskyWork(directory_to_watch, destination_directory, skymap, offline)
+        offline = self.img_off_1.text()   
+        offline_2 = self.img_off_2.text()      
+        self.allsky_handler = AllSky.AllskyWork(directory_to_watch, destination_directory, skymap, offline, directory_to_watch_2, destination_directory_2, offline_2)
         self.allsky_handler.start()
     
     def update_allsky_config(self):
         # ADD BOTAO UI
         directory_to_watch = self.ftp_allsky_1.text()
+        directory_to_watch_2 = self.ftp_allsky_2.text()
         destination_directory = self.dir_allsky_1.text()
-        self.allsky_handler.update(directory_to_watch, destination_directory)
+        self.allsky_handler.update(directory_to_watch, directory_to_watch_2, destination_directory)
     
     def stop_allsky(self):
         if self.allsky_handler:
@@ -155,6 +159,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
     
     def update_image(self):
         path = self.dir_allsky_1.text()+r'\allsky_picole.jpg'
+        path2 = self.dir_allsky_2.text()+r'\allsky340c.jpg'
         if self.allsky_handler:
             if self.is_image_modified(path):
                 pixmap = QPixmap(path)
@@ -163,6 +168,13 @@ class MyApp(QMainWindow, Ui_MainWindow):
                 if os.path.exists(self.img_off_1.text()):
                     pixmap = QPixmap(self.img_off_1.text())
                     self.img_allsky_1.setPixmap(pixmap)
+            if self.is_image_modified(path2):
+                pixmap2 = QPixmap(path2)
+                self.img_allsky_2.setPixmap(pixmap2)
+            if not self.allsky_handler.check_online(self.ftp_allsky_2.text()):
+                if os.path.exists(self.img_off_2.text()):
+                    pixmap = QPixmap(self.img_off_2.text())
+                    self.img_allsky_2.setPixmap(pixmap2)
     
     def start_weather_tcspd(self):
         source_file = self.source_weather_tcspd.text()
@@ -274,9 +286,19 @@ class MyApp(QMainWindow, Ui_MainWindow):
                     else:
                         self.main_stat_allsky_1.setStyleSheet("background-color: gold")
                         self.main_stat_allsky_1.setText("!!!")
+                if os.path.exists(self.ftp_allsky_2.text()):
+                    is_allsky2_on = self.allsky_handler.check_online(self.ftp_allsky_2.text())
+                    if is_allsky2_on:
+                        self.main_stat_allsky_2.setStyleSheet("background-color: lightgreen")
+                        self.main_stat_allsky_2.setText("ON")
+                    else:
+                        self.main_stat_allsky_2.setStyleSheet("background-color: gold")
+                        self.main_stat_allsky_2.setText("!!!")
             else:
                 self.main_stat_allsky_1.setStyleSheet("background-color: indianred")
                 self.main_stat_allsky_1.setText("OFF")
+                self.main_stat_allsky_2.setStyleSheet("background-color: indianred")
+                self.main_stat_allsky_2.setText("OFF")
     
     def update_status(self):  
         self.update_image()

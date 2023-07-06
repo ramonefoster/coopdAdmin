@@ -1,27 +1,30 @@
 import os
-import time
+import datetime, time
 import shutil
 import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import allsky.constellations.skymap as SkyMap
-import datetime
 
 class AllskyWork(threading.Thread):
-    def __init__(self, directory_to_watch, destination_directory, skymap, offline_file):
+    def __init__(self, directory_to_watch, destination_directory, skymap, offline_file, directory_to_watch_2, destination_directory_2, offline_file_2):
         super().__init__()
         self._stop_event = threading.Event()
         self.event_handler = FileHandler(directory_to_watch, destination_directory, skymap)
+        self.event_handler2 = FileHandler(directory_to_watch_2, destination_directory_2, skymap)
         self.observer = Observer()
         self.observer.schedule(self.event_handler, directory_to_watch, recursive=True)
+        self.observer.schedule(self.event_handler2, directory_to_watch_2, recursive=True)
         self.stat_msg = None
         self.destination_directory = destination_directory
         self.offline_file = offline_file
+        self.offline_file_2 = offline_file_2
         self.flag = True
     
-    def update(self, directory_to_watch, destination_directory):
-        self.event_handler.update_directories(directory_to_watch, destination_directory)   
-        self.stat_msg = "Diretorios atualizados."  
+    def update(self, directory_to_watch1, directory_to_watch2, destination_directory):
+        self.event_handler.update_directories(directory_to_watch1, destination_directory)
+        self.event_handler2.update_directories(directory_to_watch2, destination_directory)
+        self.stat_msg = "Directories updated."  
 
     def is_file_stale(self, file_path):
         modified_time = os.path.getmtime(file_path)
@@ -36,12 +39,18 @@ class AllskyWork(threading.Thread):
                 if "AllSky" in file:
                     file_path = os.path.join(root, file)
                     if self.is_file_stale(file_path):
-                        new_file_name = "allsky_picole.jpg"  # Rename the file if desired
+                        parent_folder = os.path.basename(os.path.dirname(file_path))
+                        if "allsky340c" in parent_folder:
+                            new_file_name = "allsky340c.jpg"
+                            off = self.offline_file_2
+                        else:
+                            new_file_name = "allsky_picole.jpg"
+                            off = self.offline_file
                         new_file_path = os.path.join(self.destination_directory, new_file_name)
-                        if os.path.exists(self.offline_file):
+                        if os.path.exists(off):
                             if self.stat_msg:
                                 if "Offline" not in self.stat_msg:
-                                    shutil.copyfile(self.offline_file, new_file_path)
+                                    shutil.copyfile(off, new_file_path)
                             self.stat_msg = f"Imagem Allsky Offline movida."
                         return False
         return True 
@@ -89,15 +98,27 @@ class FileHandler(FileSystemEventHandler):
             try:
                 file_path = event.src_path
                 file_name = os.path.basename(file_path)
-                if "AllSky" in file_name:
-                    new_file_name = "allsky_picole.jpg"  # Rename the file if desired
-                    new_file_path = os.path.join(self.destination_directory, new_file_name)
-                    shutil.copyfile(file_path, new_file_path)
-                    current_time = datetime.datetime.now()
-                    formatted_time = current_time.strftime("%H:%M")
-                    self.stat_msg = f"{formatted_time} Imagem Allsky movida."
-                    if self.skymap:
-                        self.generate_skymap(new_file_path)
+                parent_folder = os.path.basename(os.path.dirname(file_path))
+                if "allsky340c" in parent_folder:
+                    if "AllSky" in file_name:
+                        new_file_name = "allsky340c.jpg"  # Rename the file if desired
+                        new_file_path = os.path.join(self.destination_directory, new_file_name)
+                        shutil.copyfile(file_path, new_file_path)
+                        current_time = datetime.datetime.now()
+                        formatted_time = current_time.strftime("%H:%M")
+                        self.stat_msg = f"{formatted_time} Imagem Allsky movida."
+                        if self.skymap:
+                            self.generate_skymap(new_file_path)
+                else:
+                    if "AllSky" in file_name:
+                        new_file_name = "allsky_picole.jpg"  # Rename the file if desired
+                        new_file_path = os.path.join(self.destination_directory, new_file_name)
+                        shutil.copyfile(file_path, new_file_path)
+                        current_time = datetime.datetime.now()
+                        formatted_time = current_time.strftime("%H:%M")
+                        self.stat_msg = f"{formatted_time} Imagem Allsky movida."
+                        if self.skymap:
+                            self.generate_skymap(new_file_path)
             except Exception as e:
                 self.stat_msg = "Error Allsky: "+str(e)
 
