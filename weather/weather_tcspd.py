@@ -1,4 +1,5 @@
 import os
+import time
 import datetime
 import threading
 import weather.weather2db as SaveWeather
@@ -26,23 +27,27 @@ class GetWeather(threading.Thread):
         destination_exists = os.path.exists(destination_file)
         
         if not destination_exists or source_modified_time > os.path.getmtime(destination_file):
-            with open(station_file, 'r') as file:
-                lines = file.readlines()
-                last_line = lines[-1]
+            try:
+                with open(station_file, "rb") as file:
+                    file.seek(-2, 2)  
+                    while file.read(1) != b"\n":
+                        file.seek(-2, 1)  
+                    last_line = file.readline().decode()                              
 
-            with open(destination_file, 'w') as file:
-                file.write(last_line)
-                print(last_line)
+                t0 = time.time()
+                with open(destination_file, 'w') as file:
+                    file.write('\n'+last_line)
+                delta_t = (time.time() - t0)
+
                 if self.save2db:
-                    print("save2db exists")
-                    self.stat_msg = self.save2db.save_to_db()
-                else:
-                    print(self.save2db)
-            
-            current_time = datetime.datetime.now()
-            formatted_time = current_time.strftime("%H:%M")
+                    self.stat_msg = self.save2db.save_to_db() 
+                
+                current_time = datetime.datetime.now()
+                formatted_time = current_time.strftime("%H:%M")
 
-            self.stat_msg = f"{formatted_time} Última linha salva em: '{destination_file}'."
+                self.stat_msg = f"{formatted_time} Última linha salva em: '{destination_file}' | Levou {delta_t}s."
+            except Exception as e:
+                self.stat_msg = "Falha no arquivo: "+str(e)            
         else:
             self.stat_msg = "Nenhuma modificação no arquivo da estação."
 

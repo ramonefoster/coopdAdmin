@@ -173,7 +173,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
                 self.img_allsky_2.setPixmap(pixmap2)
             if not self.allsky_handler.check_online(self.ftp_allsky_2.text()):
                 if os.path.exists(self.img_off_2.text()):
-                    pixmap = QPixmap(self.img_off_2.text())
+                    pixmap2 = QPixmap(self.img_off_2.text())
                     self.img_allsky_2.setPixmap(pixmap2)
     
     def start_weather_tcspd(self):

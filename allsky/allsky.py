@@ -5,6 +5,7 @@ import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import allsky.constellations.skymap as SkyMap
+import cv2
 
 class AllskyWork(threading.Thread):
     def __init__(self, directory_to_watch, destination_directory, skymap, offline_file, directory_to_watch_2, destination_directory_2, offline_file_2):
@@ -92,6 +93,21 @@ class FileHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         self.process(event)
+    
+    def enhance_img(self, img_path, destiny):
+        img = cv2.imread(img_path)
+
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+
+        l, a, b = cv2.split(lab)
+
+        clahe = cv2.createCLAHE(clipLimit=.7, tileGridSize=(10, 10))
+        clahe_l = clahe.apply(l)
+
+        enhanced_lab = cv2.merge((clahe_l, a, b))
+
+        enhanced_bgr = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+        cv2.imwrite(destiny, enhanced_bgr)
 
     def process(self, event):
         if not event.is_directory:
@@ -104,9 +120,10 @@ class FileHandler(FileSystemEventHandler):
                         new_file_name = "allsky340c.jpg"  # Rename the file if desired
                         new_file_path = os.path.join(self.destination_directory, new_file_name)
                         shutil.copyfile(file_path, new_file_path)
+                        self.enhance_img(new_file_path, new_file_path)
                         current_time = datetime.datetime.now()
                         formatted_time = current_time.strftime("%H:%M")
-                        self.stat_msg = f"{formatted_time} Imagem Allsky movida."
+                        self.stat_msg = f"{formatted_time} Imagem Allsky movida. (mod)"
                         if self.skymap:
                             self.generate_skymap(new_file_path)
                 else:
@@ -114,9 +131,10 @@ class FileHandler(FileSystemEventHandler):
                         new_file_name = "allsky_picole.jpg"  # Rename the file if desired
                         new_file_path = os.path.join(self.destination_directory, new_file_name)
                         shutil.copyfile(file_path, new_file_path)
+                        self.enhance_img(new_file_path, new_file_path)
                         current_time = datetime.datetime.now()
                         formatted_time = current_time.strftime("%H:%M")
-                        self.stat_msg = f"{formatted_time} Imagem Allsky movida."
+                        self.stat_msg = f"{formatted_time} Imagem Allsky movida. (mod)"
                         if self.skymap:
                             self.generate_skymap(new_file_path)
             except Exception as e:

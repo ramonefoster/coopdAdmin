@@ -22,7 +22,7 @@ import allsky.constellations.getEphem as getEphem
 class SkyMap(threading.Thread):    
     def __init__(self):
 
-        self.allsky_angle = 134.6
+        self.allsky_angle = 133
 
         self.stardata = None
         # Download a list of constellations from Stellarium
@@ -134,8 +134,19 @@ class SkyMap(threading.Thread):
                 tr = tx.Affine2D().rotate_deg(0)
                 ax.imshow(img, extent=[-320, 320, -240, 240])
 
+                center = (0.5, 0.5)  # Center coordinates (x, y)
+                radius = 280.4  # Radius of the circular region
+
+                # Filter the line segments based on their endpoints' distance from the center
+                filtered_segments = []
+                for segment in self.generate_constellation_lines(self.constellations):
+                    dist1 = np.linalg.norm(segment[0] - center)
+                    dist2 = np.linalg.norm(segment[1] - center)
+                    if dist1 <= radius and dist2 <= radius:
+                        filtered_segments.append(segment)
+
                 # Plot constellation lines
-                ax.add_collection(LineCollection(self.generate_constellation_lines(self.constellations),
+                ax.add_collection(LineCollection(filtered_segments,
                                     colors='gold', linewidths=.5, zorder=1, alpha=0.4))                
 
                 # Plot Stars only at daytime
@@ -179,7 +190,7 @@ class SkyMap(threading.Thread):
 
                 # get planets and bright stars names/coordinates
                 planets, stars = getEphem.astro_coordinates(self.allsky_angle)  
-                valid_planets = [(planet, planets[planet]) for planet in planets if (-280 < planets[planet][0] < 280) and (-220 < planets[planet][1] < 220) and is_online]
+                valid_planets = [(planet, planets[planet]) for planet in planets if (-280 < planets[planet][0] < 280) and (-230 < planets[planet][1] < 230) and is_online]
                 valid_stars = [(star, stars[star]) for star in stars if (-280 < stars[star][0] < 280) and (-220 < stars[star][1] < 220) and is_online]
 
                 for planet, (x, y) in valid_planets:
