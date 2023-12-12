@@ -4,6 +4,8 @@ import datetime
 import threading
 import weather.weather2db as SaveWeather
 
+import zmq
+
 class GetWeather(threading.Thread):
     def __init__(self, station_file, destination_file, db_name, user, password, host, port):
         super().__init__()
@@ -13,6 +15,10 @@ class GetWeather(threading.Thread):
         self.stat_msg = None
         self.flag = True
         self.save2db = SaveWeather.WeatherToDB(station_file, db_name, user, password, host, port)
+
+        context = zmq.Context()
+        self.publisher = context.socket(zmq.PUB)
+        self.publisher.bind("tcp://200.131.64.237:7001")
     
     def update_files(self, source, destination):
         self.station_file = source
@@ -46,7 +52,22 @@ class GetWeather(threading.Thread):
                 formatted_time = current_time.strftime("%H:%M")
 
                 self.stat_msg = f"{formatted_time} Última linha salva em: '{destination_file}' | Levou {delta_t}s."
+                if self.publisher:
+                    data = last_line.split()
+                    topics = [
+                        b'/observingconditions/humidity',
+                        b'/observingconditions/temperature',
+                        b'/observingconditions/windspeed',
+                        b'/observingconditions/winddirection',
+                        b'/observingconditions/pressure'
+                    ]
+                    values = [data[5].encode(), data[2].encode(), data[7].encode(), data[8].encode(), data[16].encode()]
+
+                    for topic, value in zip(topics, values):
+                        pub = [topic, value]
+                        self.publisher.send_multipart(pub)
             except Exception as e:
+                print(e)
                 self.stat_msg = "Falha no arquivo: "+str(e)            
         else:
             self.stat_msg = "Nenhuma modificação no arquivo da estação."

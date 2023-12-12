@@ -92,7 +92,7 @@ class BackupDB(threading.Thread):
             file_path = TODAYBACKUPPATH + '/observacoes.sql'
             self.zip_files(file_path, (TODAYBACKUPPATH+"/db_backup.zip"))
             self.progress = 80
-            uploader.upload_basic(TODAYBACKUPPATH+'/db_backup.zip')
+            # uploader.upload_basic(TODAYBACKUPPATH+'/db_backup.zip')
         except Exception as e:
             self.stat_msg = "Erro no upload: " + str(e)
         self.progress = 100

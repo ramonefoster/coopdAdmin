@@ -40,6 +40,7 @@ class Goes16Plot():
         
     # Function to create a GIF from the stored images
     def create_gif(self, image_dir, gif_filename):
+        print("GIF: ", image_dir, gif_filename)
         images = []
         try:
             for file in sorted(glob.glob(os.path.join(image_dir, '*.png')))[-7:]:
@@ -54,6 +55,8 @@ class Goes16Plot():
                save_all=True, duration=duration_list, loop=0)
                 os.remove(images[0])
                 return "Concluido: Gif criado."
+            else:
+                print("... ...")
         except Exception as e:
             return("Error gif:" + str(e))
 
