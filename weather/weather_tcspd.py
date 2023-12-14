@@ -5,6 +5,7 @@ import threading
 import weather.weather2db as SaveWeather
 
 import zmq
+import json
 
 class GetWeather(threading.Thread):
     def __init__(self, station_file, destination_file, db_name, user, password, host, port):
@@ -53,19 +54,18 @@ class GetWeather(threading.Thread):
 
                 self.stat_msg = f"{formatted_time} Última linha salva em: '{destination_file}' | Levou {delta_t}s."
                 if self.publisher:
-                    data = last_line.split()
-                    topics = [
-                        b'/observingconditions/humidity',
-                        b'/observingconditions/temperature',
-                        b'/observingconditions/windspeed',
-                        b'/observingconditions/winddirection',
-                        b'/observingconditions/pressure'
-                    ]
-                    values = [data[5].encode(), data[2].encode(), data[7].encode(), data[8].encode(), data[16].encode()]
-
-                    for topic, value in zip(topics, values):
-                        pub = [topic, value]
-                        self.publisher.send_multipart(pub)
+                    data = last_line.split()                    
+                    message = {"humidity": data[5], 
+                               "temperature": data[2],
+                               "windspeed": data[7],
+                               "winddirection": data[8], 
+                               "pressure": data[16],
+                               "leaf": data[36]
+                               }
+                    
+                    serialized_message = json.dumps(message)
+    
+                    self.publisher.send(serialized_message.encode())
             except Exception as e:
                 print(e)
                 self.stat_msg = "Falha no arquivo: "+str(e)            
