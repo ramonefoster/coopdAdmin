@@ -1,4 +1,5 @@
 import sys, os
+import time
 
 from PyQt5 import  QtWidgets, uic
 from PyQt5.QtCore import QTimer, QSettings
@@ -9,6 +10,9 @@ import goes.download as get_goes
 import backup.database_bkp as DBbackuper
 import weather.weather_tcspd as ClimaTCSPD
 import allsky.allsky as AllSky
+
+import zmq
+import json
 
 pyQTfileName = "coopd.ui"
 
@@ -23,6 +27,13 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.get_settings_value()
         self.load_settings()
         self.timer_update = QTimer()
+
+        #ZeroMQ
+        self.ctx = zmq.Context()
+        self.puller = self.ctx.socket(zmq.PULL)
+        self.puller.bind("tcp://200.131.64.237:7006")
+        self.poller = zmq.Poller()
+        self.poller.register(self.puller, zmq.POLLIN)
 
         self.goes = None        
         self.start_goes()
@@ -50,6 +61,20 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.btn_reload_allsky.clicked.connect(self.update_allsky_config)
 
         self.start_timer()  
+    
+    def recv_cmd_pull(self):
+        socks = dict(self.poller.poll(50))
+        if socks.get(self.puller) == zmq.POLLIN:
+            msg_pull = self.puller.recv_string()
+            try:
+                msg_pull = json.loads(msg_pull)
+                action = msg_pull.get("Action")
+                cmd = action.get("CMD")
+                self._client_id = msg_pull.get("ClientID") 
+                if cmd == "STATUS":
+                    self.weather_handle.public_weather()
+            except:
+                pass
     
     def get_settings_value(self):
         self.setting_variables = QSettings('coopd', 'variables')
@@ -186,6 +211,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         port = '5432'
         self.weather_handle = ClimaTCSPD.GetWeather(source_file, dest_file, db_name, user, password, host, port)
         self.weather_handle.start()
+        self.weather_handle.public_weather() 
     
     def update_weather_tcspd(self):        
         # ADD BOTAO UI
@@ -300,9 +326,12 @@ class MyApp(QMainWindow, Ui_MainWindow):
                 self.main_stat_allsky_2.setStyleSheet("background-color: indianred")
                 self.main_stat_allsky_2.setText("OFF")
     
-    def update_status(self):  
+    def update_status(self): 
+        self.recv_cmd_pull() 
+        if round(time.time()%15) == 1:
+            self.weather_handle.public_weather()  
         self.update_image()
-        self.main_status()         
+        self.main_status() 
         if self.weather_handle:
             weather_msg = self.weather_handle.stat_msg 
             self.txt_msg_extras_2.setText(weather_msg)  

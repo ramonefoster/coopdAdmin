@@ -19,7 +19,17 @@ class GetWeather(threading.Thread):
 
         context = zmq.Context()
         self.publisher = context.socket(zmq.PUB)
-        self.publisher.bind("tcp://200.131.64.237:7001")
+        self.publisher.bind("tcp://200.131.64.237:7005")
+        self.last_line = None
+
+        try:
+            with open(station_file, "rb") as file:
+                file.seek(-2, 2)  
+                while file.read(1) != b"\n":
+                    file.seek(-2, 1)  
+                self.last_line = file.readline().decode()            
+        except Exception as e:
+            print(e)        
     
     def update_files(self, source, destination):
         self.station_file = source
@@ -39,11 +49,11 @@ class GetWeather(threading.Thread):
                     file.seek(-2, 2)  
                     while file.read(1) != b"\n":
                         file.seek(-2, 1)  
-                    last_line = file.readline().decode()                              
+                    self.last_line = file.readline().decode()                              
 
                 t0 = time.time()
                 with open(destination_file, 'w') as file:
-                    file.write('\n'+last_line)
+                    file.write('\n'+self.last_line)
                 delta_t = (time.time() - t0)
 
                 if self.save2db:
@@ -53,24 +63,34 @@ class GetWeather(threading.Thread):
                 formatted_time = current_time.strftime("%H:%M")
 
                 self.stat_msg = f"{formatted_time} Última linha salva em: '{destination_file}' | Levou {delta_t}s."
-                if self.publisher:
-                    data = last_line.split()                    
-                    message = {"humidity": data[5], 
-                               "temperature": data[2],
-                               "windspeed": data[7],
-                               "winddirection": data[8], 
-                               "pressure": data[16],
-                               "leaf": data[36]
-                               }
-                    
-                    serialized_message = json.dumps(message)
-    
-                    self.publisher.send(serialized_message.encode())
+
+                self.public_weather()
+                
             except Exception as e:
                 print(e)
                 self.stat_msg = "Falha no arquivo: "+str(e)            
         else:
             self.stat_msg = "Nenhuma modificação no arquivo da estação."
+    
+    def public_weather(self):
+        try:
+            data = self.last_line.split()                    
+            message = {
+                        "date" : data[0],
+                        "hour": data[1],
+                        "humidity": data[5], 
+                        "temperature": data[2],
+                        "windspeed": data[7],
+                        "winddirection": data[8], 
+                        "pressure": data[16],
+                        "leaf": data[36],
+                        "rain": data[17]
+                        }
+            
+            serialized_message = json.dumps(message)
+            self.publisher.send_string(serialized_message)
+        except:
+            print("Error ZMQ pub weather")
 
     def run(self):
         while self.flag:
