@@ -68,9 +68,9 @@ class MyApp(QMainWindow, Ui_MainWindow):
             msg_pull = self.puller.recv_string()
             try:
                 msg_pull = json.loads(msg_pull)
-                action = msg_pull.get("Action")
-                cmd = action.get("CMD")
-                self._client_id = msg_pull.get("ClientID") 
+                action = msg_pull.get("action")
+                cmd = action.get("cmd")
+                self._client_id = msg_pull.get("clientId") 
                 if cmd == "STATUS":
                     self.weather_handle.public_weather()
             except:
