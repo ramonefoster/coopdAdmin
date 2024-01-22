@@ -1,0 +1,4 @@
+*.dat
+*.fab
+*.bsp
+__pycache__

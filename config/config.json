@@ -1,0 +1,52 @@
+{
+    "goes": {
+        "band": 2,
+        "switch_band": false,
+        "coopd": "",
+        "download": "",
+        "offline": ""
+    },
+    "allsky": {
+        "skymap": false,
+        "allsky_picole": {
+            "angle": 255,
+            "ftp": "",
+            "coopd": "",
+            "offline": ""
+        },
+        "allsky_container": {
+            "angle": 50,
+            "ftp": "",
+            "coopd": "",
+            "offline": ""
+        }
+    },
+    "weather": {
+        "zeromq": {
+            "ip": "200.131.64.237",
+            "pub_port": "7005",
+            "pull_port": "7006"
+        },
+        "station_file": "",
+        "tcspd_file": ""
+    },
+    "database": {
+        "weather": {
+            "host": "127.0.0.1",
+            "port": "5432",
+            "name": "",
+            "username": "",
+            "password": "",
+            "local_backup": "",
+            "backup_hour": 12
+        },
+        "coopd": {
+            "host": "127.0.0.1",
+            "name": "",
+            "username": "",
+            "password": "",
+            "local_backup": "",
+            "backup_hour": 12
+        }
+    }
+}
