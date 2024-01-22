@@ -36,17 +36,17 @@
             "port": "5432",
             "name": "opdweather",
             "username": "postgres",
-            "password": "",
+            "password": "coopd@2020",
             "local_backup": "C:\\Users\\servidorOPD\\Documents\\BACKUPS",
-            "backup_hour": 12
+            "backup_hour": 13
         },
         "coopd": {
-            "host": "127.0.0.1",
-            "name": "opdweather",
-            "username": "postgres",
-            "password": "",
+            "host": "db.lna.br",
+            "name": "coopd",
+            "username": "ramones",
+            "password": "MwuIh7]OgBK]aTT4",
             "local_backup": "C:\\Users\\servidorOPD\\Documents\\BACKUPS",
-            "backup_hour": 12
+            "backup_hour": 13
         }
     }
 }
