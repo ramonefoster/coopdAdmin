@@ -174,7 +174,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.db_name.setText(db_coopd.get("name"))
         self.db_bkp_folder.setText(db_coopd.get("local_backup"))
         """FILE TCSPD WEATHER"""
-        db_weather = self.setup_database.get("coopd")
+        db_weather = self.setup_database.get("weather")
         self.dest_weather_tcspd.setText(self.setup_weather.get("tcspd_file"))
         self.source_weather_tcspd.setText(self.setup_weather.get("station_file"))
         self.txtIP.setText(self.setup_weather.get("zeromq").get("ip"))
