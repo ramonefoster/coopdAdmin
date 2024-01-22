@@ -8,7 +8,7 @@ import zmq
 import json
 
 class GetWeather(threading.Thread):
-    def __init__(self, station_file, destination_file, db_name, user, password, host, port):
+    def __init__(self, station_file, destination_file, db_name, user, password, host, port, publisher):
         super().__init__()
         self._stop_event = threading.Event()
         self.station_file = station_file
@@ -17,9 +17,7 @@ class GetWeather(threading.Thread):
         self.flag = True
         self.save2db = SaveWeather.WeatherToDB(station_file, db_name, user, password, host, port)
 
-        context = zmq.Context()
-        self.publisher = context.socket(zmq.PUB)
-        self.publisher.bind("tcp://200.131.64.237:7005")
+        self.publisher = publisher        
         self.last_line = None
 
         try:
@@ -87,8 +85,9 @@ class GetWeather(threading.Thread):
                         "rain": data[17]
                         }
             
-            serialized_message = json.dumps(message)
-            self.publisher.send_string(serialized_message)
+            if self.publisher:
+                serialized_message = json.dumps(message)
+                self.publisher.send_string(serialized_message)
         except:
             print("Error ZMQ pub weather")
 

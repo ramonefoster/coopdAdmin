@@ -26,7 +26,7 @@ class BackupDB(threading.Thread):
         self.DB_USER = user
         self.DB_USER_PASSWORD = password
         self.DB_NAME = db_name
-        self.BACKUP_DIR = bkp_folder
+        self.BACKUP_DIR = bkp_folder.replace("\\", "/")
     
     def stop(self):
         self.flag = False
@@ -39,7 +39,7 @@ class BackupDB(threading.Thread):
     def do_work(self):
         self.progress = 0
         DATETIME = time.strftime('%Y%m%d-%H%M%S')
-        TODAYBACKUPPATH = 'backup/files' + '/' + DATETIME
+        TODAYBACKUPPATH = self.BACKUP_DIR + '/' + DATETIME
         
         # Checking if backup folder already exists or not. If not exists will create it.
         try:

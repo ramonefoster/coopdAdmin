@@ -24,16 +24,15 @@ class MyApp(QMainWindow, Ui_MainWindow):
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
 
-        self.get_settings_value()
+        self.setup_goes = self.load_config("goes")
+        self.setup_allsky = self.load_config("allsky")
+        self.setup_weather = self.load_config("weather")
+        self.setup_database = self.load_config("database")
         self.load_settings()
+        
         self.timer_update = QTimer()
 
-        #ZeroMQ
-        self.ctx = zmq.Context()
-        self.puller = self.ctx.socket(zmq.PULL)
-        self.puller.bind("tcp://200.131.64.237:7006")
-        self.poller = zmq.Poller()
-        self.poller.register(self.puller, zmq.POLLIN)
+        self.start_zmq()
 
         self.goes = None        
         self.start_goes()
@@ -62,87 +61,144 @@ class MyApp(QMainWindow, Ui_MainWindow):
 
         self.start_timer()  
     
+    def start_zmq(self):
+        try:
+            self.ctx = zmq.Context()
+            self.puller = self.ctx.socket(zmq.PULL)
+            self.puller.bind(f"tcp://{self.txtIP.text()}:{self.txtPull.text()}")
+
+            self.publisher = self.ctx.socket(zmq.PUB)
+            self.publisher.bind(f"tcp://{self.txtIP.text()}:{self.txtPub.text()}")
+            self.poller = zmq.Poller()
+            self.poller.register(self.puller, zmq.POLLIN)
+        except:
+            self.poller = None
+            self.publisher = None
+
+    def load_config(self, item):        
+        with open("config/config.json", 'r+') as file:
+            setup = json.load(file)
+            return setup[item]
+    
     def recv_cmd_pull(self):
-        socks = dict(self.poller.poll(50))
-        if socks.get(self.puller) == zmq.POLLIN:
-            msg_pull = self.puller.recv_string()
-            try:
-                msg_pull = json.loads(msg_pull)
-                action = msg_pull.get("action")
-                cmd = action.get("cmd")
-                self._client_id = msg_pull.get("clientId") 
-                if cmd == "STATUS":
-                    self.weather_handle.public_weather()
-            except:
-                pass
+        if self.poller:
+            socks = dict(self.poller.poll(50))
+            if socks.get(self.puller) == zmq.POLLIN:
+                msg_pull = self.puller.recv_string()
+                try:
+                    msg_pull = json.loads(msg_pull)
+                    action = msg_pull.get("Action")
+                    cmd = action.get("CMD")
+                    self._client_id = msg_pull.get("ClientID") 
+                    if cmd == "STATUS":
+                        self.weather_handle.public_weather()
+                except:
+                    pass
     
-    def get_settings_value(self):
-        self.setting_variables = QSettings('coopd', 'variables')
+    def save_config(self, device, keys, value):        
+        with open("config/config.json", 'r+') as file:
+            setup = json.load(file)
+            current_dict = setup[device]
+            for key in keys[:-1]:
+                current_dict = current_dict[key]
+            
+            current_dict[keys[-1]] = value
+
+            file.seek(0)
+            json.dump(setup, file, indent=4)
+            file.truncate()
     
+    def save_handler(self, device, config_values):
+        """Save configuration settings for a specific device."""
+        for keys, value in config_values.items():
+            self.save_config(device, keys, value)
+
     def save_settings(self):
         """GOES"""
-        self.setting_variables.setValue("dir_goes_coopd", self.dir_goes_coopd.text())
-        self.setting_variables.setValue("dir_down_goes", self.dir_down_goes.text())
-        self.setting_variables.setValue("dir_goes_off", self.dir_goes_off.text())
+        self.save_handler("goes", {
+            ("coopd",): self.dir_goes_coopd.text(),
+            ("download",): self.dir_down_goes.text(),
+            ("offline",): self.dir_goes_off.text()
+        })
         """BACKUP DB"""
-        self.setting_variables.setValue("db_user", self.db_user.text())
-        self.setting_variables.setValue("db_password", self.db_password.text())
-        self.setting_variables.setValue("db_hour", self.db_hour.value())
-        self.setting_variables.setValue("db_host", self.db_host.text())
-        self.setting_variables.setValue("db_name", self.db_name.text())
-        self.setting_variables.setValue("db_bkp_folder", self.db_bkp_folder.text())
-        """FILE TCSPD WEATHER"""
-        self.setting_variables.setValue("dest_weather_tcspd", self.dest_weather_tcspd.text())
-        self.setting_variables.setValue("source_weather_tcspd", self.source_weather_tcspd.text())
-        self.setting_variables.setValue("db_user_2", self.db_user_2.text())
-        self.setting_variables.setValue("db_password_2", self.db_password_2.text())
-        self.setting_variables.setValue("db_host_2", self.db_host_2.text())
-        self.setting_variables.setValue("db_name_2", self.db_name_2.text())
-        """ALLSKY 1"""
-        self.setting_variables.setValue("ftp_allsky_1", self.ftp_allsky_1.text())
-        self.setting_variables.setValue("dir_allsky_1", self.dir_allsky_1.text())
-        self.setting_variables.setValue("img_off_1", self.img_off_1.text())
-        self.setting_variables.setValue("angle_allsky_1", self.angle_allsky_1.value())
-        """ALLSKY 2"""
-        self.setting_variables.setValue("ftp_allsky_2", self.ftp_allsky_2.text())
-        self.setting_variables.setValue("dir_allsky_2", self.dir_allsky_2.text())
-        self.setting_variables.setValue("img_off_2", self.img_off_2.text())
-        self.setting_variables.setValue("angle_allsky_2", self.angle_allsky_2.value())        
-        self.setting_variables.setValue("check_skymap", self.check_skymap.isChecked())
+        self.save_handler("database", {
+            ("coopd", "host"): self.db_host.text(),
+            ("coopd", "name"): self.db_name.text(),
+            ("coopd", "username"): self.db_user.text(),
+            ("coopd", "password"): self.db_password.text(),
+            ("coopd", "local_backup"): self.db_bkp_folder.text(),
+            ("coopd", "backup_hour"): self.db_hour.value()
+        })
+        """DATABASE"""
+        self.save_handler("database", {
+            ("weather", "host"): self.db_host_2.text(),
+            ("weather", "name"): self.db_name_2.text(),
+            ("weather", "username"): self.db_user_2.text(),
+            ("weather", "password"): self.db_password_2.text(),
+            ("weather", "local_backup"): self.db_bkp_folder.text(),
+            ("weather", "backup_hour"): self.db_hour.value()
+        })
+        """WEATHER"""
+        self.save_handler("weather", {
+            ("station_file",): self.source_weather_tcspd.text(),
+            ("tcspd_file",): self.dest_weather_tcspd.text(),
+            ("zeromq", "ip"): self.txtIP.text(),
+            ("zeromq", "pub_port"): self.txtPub.text(),
+            ("zeromq", "pull_port"): self.txtPull.text(),
+        })
+        """ALLSKY"""
+        self.save_handler("allsky", {
+            ("skymap",): self.check_skymap.isChecked(),
+            ("allsky_picole", "angle"): self.angle_allsky_1.value(),
+            ("allsky_picole", "ftp"): self.ftp_allsky_1.text(),
+            ("allsky_picole", "coopd"): self.dir_allsky_1.text(),
+            ("allsky_picole", "offline"): self.img_off_1.text(),
+            ("allsky_container", "angle"): self.angle_allsky_2.value(),
+            ("allsky_container", "ftp"): self.ftp_allsky_2.text(),
+            ("allsky_container", "coopd"): self.dir_allsky_2.text(),
+            ("allsky_container", "offline"): self.img_off_2.text(),
+        })
 
     def load_settings(self):
         """GOES"""
-        self.dir_goes_coopd.setText(self.setting_variables.value("dir_goes_coopd"))
-        self.dir_down_goes.setText(self.setting_variables.value("dir_down_goes"))
-        self.dir_goes_off.setText(self.setting_variables.value("dir_goes_off"))
+        self.dir_goes_coopd.setText(self.setup_goes.get("coopd"))
+        self.dir_down_goes.setText(self.setup_goes.get("download"))
+        self.dir_goes_off.setText(self.setup_goes.get("offline"))
         """BACKUP DB"""
-        self.db_user.setText(self.setting_variables.value("db_user"))
-        self.db_password.setText(self.setting_variables.value("db_password"))
-        if self.setting_variables.value("db_hour"):
-            self.db_hour.setValue(self.setting_variables.value("db_hour"))
-        self.db_host.setText(self.setting_variables.value("db_host"))
-        self.db_name.setText(self.setting_variables.value("db_name"))
-        self.db_bkp_folder.setText(self.setting_variables.value("db_bkp_folder"))
+        db_coopd = self.setup_database.get("coopd")
+        self.db_user.setText(db_coopd.get("username"))
+        self.db_password.setText(db_coopd.get("password"))
+        if db_coopd.get("backup_hour"):
+            self.db_hour.setValue(db_coopd.get("backup_hour"))
+        self.db_host.setText(db_coopd.get("host"))
+        self.db_name.setText(db_coopd.get("name"))
+        self.db_bkp_folder.setText(db_coopd.get("local_backup"))
         """FILE TCSPD WEATHER"""
-        self.dest_weather_tcspd.setText(self.setting_variables.value("dest_weather_tcspd"))
-        self.source_weather_tcspd.setText(self.setting_variables.value("source_weather_tcspd"))
-        self.db_user_2.setText(self.setting_variables.value("db_user_2"))
-        self.db_password_2.setText(self.setting_variables.value("db_password_2"))        
-        self.db_host_2.setText(self.setting_variables.value("db_host_2"))
-        self.db_name_2.setText(self.setting_variables.value("db_name_2"))
+        db_weather = self.setup_database.get("coopd")
+        self.dest_weather_tcspd.setText(self.setup_weather.get("tcspd_file"))
+        self.source_weather_tcspd.setText(self.setup_weather.get("station_file"))
+        self.txtIP.setText(self.setup_weather.get("zeromq").get("ip"))
+        self.txtPub.setText(self.setup_weather.get("zeromq").get("pub_port"))
+        self.txtPull.setText(self.setup_weather.get("zeromq").get("pull_port"))
+        self.db_user_2.setText(db_weather.get("username"))
+        self.db_password_2.setText(db_weather.get("password"))        
+        self.db_host_2.setText(db_weather.get("host"))
+        self.db_name_2.setText(db_weather.get("name"))
         """ALLSKY 1"""
-        self.ftp_allsky_1.setText(self.setting_variables.value("ftp_allsky_1"))
-        self.dir_allsky_1.setText(self.setting_variables.value("dir_allsky_1"))
-        self.img_off_1.setText(self.setting_variables.value("img_off_1"))
-        if self.setting_variables.value("angle_allsky_1"):
-            self.angle_allsky_1.setValue(int(self.setting_variables.value("angle_allsky_1")))
+        picole = self.setup_allsky.get("allsky_picole")
+        self.ftp_allsky_1.setText(picole.get("ftp"))
+        self.dir_allsky_1.setText(picole.get("coopd"))
+        self.img_off_1.setText(picole.get("offline"))
+        if picole.get("angle"):
+            self.angle_allsky_1.setValue(int(picole.get("angle")))
         """ALLSKY 2"""
-        self.ftp_allsky_2.setText(self.setting_variables.value("ftp_allsky_2"))
-        self.dir_allsky_2.setText(self.setting_variables.value("dir_allsky_2"))
-        self.img_off_2.setText(self.setting_variables.value("img_off_2"))
-        if self.setting_variables.value("angle_allsky_2"):
-            self.angle_allsky_2.setValue(int(self.setting_variables.value("angle_allsky_2")))
-        if self.setting_variables.value("check_skymap") == 'True':
+        container = self.setup_allsky.get("allsky_container")
+        self.ftp_allsky_2.setText(container.get("ftp"))
+        self.dir_allsky_2.setText(container.get("coopd"))
+        self.img_off_2.setText(container.get("offline"))
+        if container.get("angle"):
+            self.angle_allsky_2.setValue(int(container.get("angle")))
+        if self.setup_allsky.get("skymap") == 'True':
             self.check_skymap.setChecked(True)
         else:
             self.check_skymap.setChecked(False)
@@ -209,7 +265,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         password = self.db_password_2.text()
         db_name = self.db_name_2.text()
         port = '5432'
-        self.weather_handle = ClimaTCSPD.GetWeather(source_file, dest_file, db_name, user, password, host, port)
+        self.weather_handle = ClimaTCSPD.GetWeather(source_file, dest_file, db_name, user, password, host, port, self.publisher)
         self.weather_handle.start()
         self.weather_handle.public_weather() 
     
