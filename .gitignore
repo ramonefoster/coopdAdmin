@@ -2,4 +2,3 @@ __pycache__
 backup/client_secret.json
 backup/files
 goes/goes_data
-config
