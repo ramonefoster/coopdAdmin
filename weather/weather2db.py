@@ -51,9 +51,9 @@ class WeatherToDB():
             return None
 
     def create_task(self, conn, task):
-        sql = f''' INSERT INTO api_weather(datetime,temperature,humidity,wind_speed,wind_dir,wind_angle,bar,solar_rad, uv_dose, wind_val, leaf) VALUES '''
+        sql = f''' INSERT INTO api_weather(datetime,temperature,humidity,wind_speed,wind_dir,wind_angle,bar,solar_rad, uv_dose, wind_val, leaf, inside_temp) VALUES '''
         cur = conn.cursor()
-        args = ','.join(cur.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", i).decode('utf-8')
+        args = ','.join(cur.mogrify("(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", i).decode('utf-8')
                     for i in task)
         cur.execute(sql + args)
         conn.commit()
@@ -78,6 +78,11 @@ class WeatherToDB():
                     outside_temp = None
                 else:
                     float(outside_temp)
+                inside_temp = last_line.split()[33]
+                if '---' in inside_temp:
+                    inside_temp = None
+                else:
+                    float(inside_temp)
                 humidity = last_line.split()[5]
                 if '---' in humidity:
                     humidity = None
@@ -128,7 +133,7 @@ class WeatherToDB():
                 else:
                     float(leaf)
                 if conn:
-                    weather_to_insert = [[datetime_object, outside_temp, humidity, wind_speed, wind_dir, wind_dir_angle, weather_bar, solar_rad, uv_dose, wind_val, leaf]]
+                    weather_to_insert = [[datetime_object, outside_temp, humidity, wind_speed, wind_dir, wind_dir_angle, weather_bar, solar_rad, uv_dose, wind_val, leaf, inside_temp]]
                     self.create_task(conn, weather_to_insert)
                     current_time = datetime.now()
                     formatted_time = current_time.strftime("%H:%M")

@@ -77,6 +77,7 @@ class GetWeather(threading.Thread):
                         "date" : data[0],
                         "hour": data[1],
                         "humidity": data[5], 
+                        "inside_temperature": data[33],
                         "temperature": data[2],
                         "windspeed": data[7],
                         "winddirection": data[8], 

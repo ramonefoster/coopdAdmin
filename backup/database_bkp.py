@@ -17,7 +17,7 @@ class BackupDB(threading.Thread):
         self.DB_USER = user
         self.DB_USER_PASSWORD = password
         self.DB_NAME = db_name
-        self.BACKUP_DIR = bkp_folder
+        self.BACKUP_DIR = bkp_folder.replace("\\", "/")
         self.flag = True
     
     def update_config(self, hour, host, user, password, db_name, bkp_folder):
