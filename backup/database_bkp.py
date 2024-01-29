@@ -89,7 +89,7 @@ class BackupDB(threading.Thread):
         
         try:
             self.stat_msg = "Backup script completed"
-            file_path = TODAYBACKUPPATH + '/observacoes.sql'
+            file_path = TODAYBACKUPPATH + '/coopd.sql'
             self.zip_files(file_path, (TODAYBACKUPPATH+"/db_backup.zip"))
             self.progress = 80
             # uploader.upload_basic(TODAYBACKUPPATH+'/db_backup.zip')
