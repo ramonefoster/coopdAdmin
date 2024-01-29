@@ -73,24 +73,32 @@ class GetWeather(threading.Thread):
     def public_weather(self):
         try:
             data = self.last_line.split()                    
+            
             message = {
+                        "broker": "Weather160",
+                        "version": "1.0.0",                        
                         "date" : data[0],
                         "hour": data[1],
-                        "humidity": data[5], 
-                        "inside_temperature": data[33],
-                        "temperature": data[2],
-                        "windspeed": data[7],
-                        "winddirection": data[8], 
+                        "outHumidity": data[5],
+                        "inHumidity": data[28],                        
+                        "inTemp": data[33],
+                        "outTemp": data[2],
+                        "windSpeed": data[7],
+                        "windDirection": data[8], 
                         "pressure": data[16],
+                        "dewOut": data[6],
+                        "dewIn": data[29],
                         "leaf": data[36],
-                        "rain": data[17]
+                        "rain": data[17],                        
+                        "windChill": data[12]                        
                         }
             
             if self.publisher:
                 serialized_message = json.dumps(message)
                 self.publisher.send_string(serialized_message)
-        except:
-            print("Error ZMQ pub weather")
+                self.stat_msg = f"ZMQ {message}"
+        except Exception as e:
+            self.stat_msg = f"Error ZMQ pub weather {str(e)}"
 
     def run(self):
         while self.flag:
