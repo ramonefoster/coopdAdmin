@@ -123,7 +123,7 @@ class FileHandler(FileSystemEventHandler):
                         self.enhance_img(new_file_path, new_file_path)
                         current_time = datetime.datetime.now()
                         formatted_time = current_time.strftime("%H:%M")
-                        self.stat_msg = f"{formatted_time} Imagem Allsky movida. (mod)"
+                        self.stat_msg = f"{formatted_time} Imagem Allsky340C movida. (mod)"
                         if self.skymap:
                             self.generate_skymap(new_file_path)
                 else:

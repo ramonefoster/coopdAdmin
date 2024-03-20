@@ -18,7 +18,7 @@
             "angle": 50,
             "ftp": "C:\\Users\\servidorOPD\\Documents\\FTP\\allsky340c",
             "coopd": "C:\\Users\\servidorOPD\\Documents\\Programas\\SistemaCOOPD\\public\\img",
-            "offline": "C:\\Users\\servidorOPD\\Documents\\IMAGENS\\allsky2_off.png"
+            "offline": "C:\\Users\\servidorOPD\\Documents\\IMAGENS\\allsky2_off.jpg"
         }
     },
     "weather": {
@@ -28,7 +28,7 @@
             "pull_port": "7006"
         },
         "station_file": "C:\\WeatherLink\\OPDNew\\download.txt",
-        "tcspd_file": "C:\\Users\\servidorOPD\\Documents\\Programas\\SistemaCOOPD\\public\files\\weather_tcspd.txt"
+        "tcspd_file": "C:\\Users\\servidorOPD\\Documents\\Programas\\SistemaCOOPD\\public\\files\\weather_tcspd.txt"
     },
     "database": {
         "weather": {
@@ -36,15 +36,15 @@
             "port": "5432",
             "name": "opdweather",
             "username": "postgres",
-            "password": "",
+            "password": "coopd@2020",
             "local_backup": "C:\\Users\\servidorOPD\\Documents\\BACKUPS",
             "backup_hour": 12
         },
         "coopd": {
-            "host": "127.0.0.1",
-            "name": "opdweather",
-            "username": "postgres",
-            "password": "",
+            "host": "db.lna.br",
+            "name": "coopd",
+            "username": "ramones",
+            "password": "MwuIh7]OgBK]aTT4",
             "local_backup": "C:\\Users\\servidorOPD\\Documents\\BACKUPS",
             "backup_hour": 12
         }
