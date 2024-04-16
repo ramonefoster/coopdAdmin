@@ -10,6 +10,8 @@ import goes.download as get_goes
 import backup.database_bkp as DBbackuper
 import weather.weather_tcspd as ClimaTCSPD
 import allsky.allsky as AllSky
+from allsky.meteor import MeteorDetection
+
 
 import zmq
 import json
@@ -33,6 +35,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.timer_update = QTimer()
 
         self.start_zmq()
+        self.meteor_detection = MeteorDetection()
 
         self.goes = None        
         self.start_goes()
@@ -61,6 +64,9 @@ class MyApp(QMainWindow, Ui_MainWindow):
 
         self.start_timer()  
     
+    def detect_meteor(self, path):
+        self.meteor_detection.detect(path)
+
     def start_zmq(self):
         try:
             self.ctx = zmq.Context()
@@ -384,7 +390,16 @@ class MyApp(QMainWindow, Ui_MainWindow):
     def update_status(self): 
         self.recv_cmd_pull() 
         if round(time.time()%15) == 1:
-            self.weather_handle.public_weather()  
+            self.weather_handle.public_weather() 
+        if round(time.time()%55) == 1:
+            path = self.dir_allsky_1.text()+r'\allsky_picole.jpg'
+            path2 = self.dir_allsky_2.text()+r'\allsky340c.jpg'
+            is_allsky_on = self.allsky_handler.check_online(self.ftp_allsky_1.text())
+            if is_allsky_on:
+                self.detect_meteor(path)
+            is_allsky2_on = self.allsky_handler.check_online(self.ftp_allsky_2.text())
+            if is_allsky2_on:
+                self.detect_meteor(path2)  
         self.update_image()
         self.main_status() 
         if self.weather_handle:
