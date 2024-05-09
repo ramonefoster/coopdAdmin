@@ -1,6 +1,6 @@
 import sys, os
 import time
-
+import datetime
 from PyQt5 import  QtWidgets, uic
 from PyQt5.QtCore import QTimer, QSettings
 from PyQt5.QtGui import *
@@ -96,6 +96,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
                     cmd = msg_pull.get("action")
                     self._client_id = msg_pull.get("clientId") 
                     if cmd == "STATUS":
+                        print(f"{datetime.datetime.now()} - STATUS REQUESTED BY {self._client_id}")
                         self.weather_handle.public_weather()
                 except:
                     pass
@@ -395,11 +396,17 @@ class MyApp(QMainWindow, Ui_MainWindow):
             path = self.dir_allsky_1.text()+r'\allsky_picole.jpg'
             path2 = self.dir_allsky_2.text()+r'\allsky340c.jpg'
             is_allsky_on = self.allsky_handler.check_online(self.ftp_allsky_1.text())
-            if is_allsky_on:
-                self.detect_meteor(path)
+            if is_allsky_on and (datetime.datetime.now().hour >=18 or datetime.datetime.now().hour <=6):
+                try:
+                    self.detect_meteor(path)
+                except:
+                    pass
             is_allsky2_on = self.allsky_handler.check_online(self.ftp_allsky_2.text())
-            if is_allsky2_on:
-                self.detect_meteor(path2)  
+            if is_allsky2_on and (datetime.datetime.now().hour >=18 or datetime.datetime.now().hour <=6):
+                try:
+                    self.detect_meteor(path2)
+                except:
+                    pass  
         self.update_image()
         self.main_status() 
         if self.weather_handle:

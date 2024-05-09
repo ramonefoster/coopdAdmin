@@ -19,8 +19,9 @@ class MeteorDetection():
 
     def detect(self, path):
         # If the sun is up don't bother running the model 
-        date = datetime.datetime.now(datetime.timezone.utc) 
-        date_str = date.strftime("%H-%M-%S")
+        date = datetime.datetime.now() 
+        date_str = date.timestamp()
+        date_str = str(date_str)
         # Load the image from the AllSkyCam 
         image = Image.open(path).convert("RGB") 
 

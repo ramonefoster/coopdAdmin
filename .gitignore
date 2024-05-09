@@ -3,3 +3,4 @@ backup/client_secret.json
 backup/files
 goes/goes_data
 config/config.json
+allsky/meteors/*
