@@ -117,7 +117,7 @@ class WeatherToDB():
                     weather_bar = None
                 else:
                     float(weather_bar)
-                solar_rad = last_line.split()[20]  
+                solar_rad = last_line.split()[19]  
                 if '---' in solar_rad:
                     solar_rad = None
                 else:
